@@ -36,9 +36,9 @@ Predict customer churn with high accuracy using Machine Learning
 @st.cache_resource
 def load_artifacts():
     try:
-        model = joblib.load("D:/Telecom churn prediction app/backend/churn_prediction_stacking_classifier.joblib")
-        scaler = joblib.load(r"D:/Telecom churn prediction app/backend/scaler.joblib")
-        features = joblib.load(r"D:/Telecom churn prediction app/backend/feature_columns.joblib")
+        model = joblib.load("churn_prediction_stacking_classifier.joblib")
+        scaler = joblib.load("scaler.joblib")
+        features = joblib.load("feature_columns.joblib")
         return model, scaler, features
     except Exception as e:
         st.error(f"❌ Error loading model files: {e}")
