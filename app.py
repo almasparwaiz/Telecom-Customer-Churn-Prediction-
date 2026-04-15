@@ -29,6 +29,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ====================== LOAD ARTIFACTS ======================
+
+@st.cache_resource
+def load_artifacts(): 
+
     
     model_path = os.path.join("churn_prediction_stacking_classifier.joblib")
     scaler_path = os.path.join("scaler.joblib")
