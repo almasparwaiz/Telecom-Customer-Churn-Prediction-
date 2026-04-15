@@ -31,7 +31,7 @@ st.markdown("""
 # ====================== LOAD ARTIFACTS ======================
 @st.cache_resource
 def load_artifacts():
-    base_dir = r"D:\Telecom churn prediction app\backend"
+    base_dir = r""
     
     model_path = os.path.join(base_dir, "churn_prediction_stacking_classifier.joblib")
     scaler_path = os.path.join(base_dir, "scaler.joblib")
