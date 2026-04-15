@@ -29,13 +29,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ====================== LOAD ARTIFACTS ======================
-@st.cache_resource
-def load_artifacts():
-    base_dir = r"Telecom-Customer-Churn-Prediction-"
     
-    model_path = os.path.join(base_dir, "churn_prediction_stacking_classifier.joblib")
-    scaler_path = os.path.join(base_dir, "scaler.joblib")
-    features_path = os.path.join(base_dir, "feature_columns.joblib")
+    model_path = os.path.join("churn_prediction_stacking_classifier.joblib")
+    scaler_path = os.path.join("scaler.joblib")
+    features_path = os.path.join("feature_columns.joblib")
 
     try:
         model = joblib.load(model_path)
