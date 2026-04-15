@@ -1,6 +1,6 @@
 # ================================================================
-# TELECOM CUSTOMER CHURN PREDICTOR - FIXED & OPTIMIZED
-# Corrected Area code type handling + robust preprocessing
+# TELECOM CUSTOMER CHURN PREDICTOR – CLEAN & PROFESSIONAL
+# Only File Upload for Batch + Single Prediction with Gauge
 # ================================================================
 
 import streamlit as st
@@ -10,6 +10,7 @@ import joblib
 import os
 import plotly.graph_objects as go
 import plotly.express as px
+from datetime import datetime
 
 st.set_page_config(
     page_title="Telecom Churn Predictor",
@@ -30,63 +31,44 @@ st.markdown("""
 # ====================== LOAD ARTIFACTS ======================
 @st.cache_resource
 def load_artifacts():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    paths = [base_dir, "", r"D:\Telecom churn prediction app\backend"]
+    base_dir = r"D:\Telecom churn prediction app\backend"
     
-    for p in paths:
-        model_path = os.path.join(p, "churn_prediction_stacking_classifier.joblib")
-        scaler_path = os.path.join(p, "scaler.joblib")
-        features_path = os.path.join(p, "feature_columns.joblib")
-        
-        if all(os.path.exists(x) for x in [model_path, scaler_path, features_path]):
-            try:
-                model = joblib.load(model_path)
-                scaler = joblib.load(scaler_path)
-                feature_columns = joblib.load(features_path)
-                return model, scaler, feature_columns, False
-            except Exception as e:
-                st.warning(f"Loading error from {p}: {e}")
-                continue
-                
-    st.error("❌ Model files not found. Please place the three .joblib files in the app folder.")
-    st.stop()
+    model_path = os.path.join(base_dir, "churn_prediction_stacking_classifier.joblib")
+    scaler_path = os.path.join(base_dir, "scaler.joblib")
+    features_path = os.path.join(base_dir, "feature_columns.joblib")
 
-model, scaler, feature_columns, IS_DEMO = load_artifacts()
+    try:
+        model = joblib.load(model_path)
+        scaler = joblib.load(scaler_path)
+        feature_columns = joblib.load(features_path)
+        return model, scaler, feature_columns
+    except Exception as e:
+        st.error(f"❌ Model files not found in: {base_dir}\nError: {e}")
+        st.stop()
+
+model, scaler, feature_columns = load_artifacts()
 
 # ====================== FEATURE ENGINEERING ======================
 def create_powerful_features(df: pd.DataFrame) -> pd.DataFrame:
     d = df.copy()
-    d["Total_Charge"] = (d["Total day charge"] + d["Total eve charge"] +
-                         d["Total night charge"] + d["Total intl charge"])
-    d["Total_Minutes"] = (d["Total day minutes"] + d["Total eve minutes"] +
-                          d["Total night minutes"] + d["Total intl minutes"])
-    d["Total_Calls"] = (d["Total day calls"] + d["Total eve calls"] +
-                        d["Total night calls"] + d["Total intl calls"])
-
-    d["Avg_Charge_Per_Minute"] = np.where(d["Total_Minutes"] > 0,
-                                          d["Total_Charge"] / d["Total_Minutes"], 0)
-
-    d["Tenure_Group_Numeric"] = pd.qcut(d["Account length"], q=4, labels=False, duplicates="drop") if d["Account length"].nunique() > 1 else 0
-
-    d["Voicemail_Per_Tenure"] = np.where(d["Account length"] > 0,
-                                         d["Number vmail messages"] / d["Account length"], 0)
-    d["Customer_Service_Calls_Per_Tenure"] = np.where(d["Account length"] > 0,
-                                                      d["Customer service calls"] / d["Account length"], 0)
-
-    if "International plan_Yes" in d.columns:
-        d["Intl_Plan_and_Usage"] = d["International plan_Yes"] * d["Total intl minutes"]
-    else:
-        d["Intl_Plan_and_Usage"] = 0
+    d["Total_Charge"] = (d.get("Total day charge", 0) + d.get("Total eve charge", 0) +
+                         d.get("Total night charge", 0) + d.get("Total intl charge", 0))
+    d["Total_Minutes"] = (d.get("Total day minutes", 0) + d.get("Total eve minutes", 0) +
+                          d.get("Total night minutes", 0) + d.get("Total intl minutes", 0))
+    
+    d["Avg_Charge_Per_Minute"] = np.where(d["Total_Minutes"] > 0, d["Total_Charge"] / d["Total_Minutes"], 0)
+    d["Voicemail_Per_Tenure"] = np.where(d["Account length"] > 0, d.get("Number vmail messages", 0) / d["Account length"], 0)
+    d["Customer_Service_Calls_Per_Tenure"] = np.where(d["Account length"] > 0, d.get("Customer service calls", 0) / d["Account length"], 0)
 
     total_min = d["Total_Minutes"].replace(0, 1)
-    d["Day_Usage_Ratio"] = d["Total day minutes"] / total_min
-    d["Eve_Usage_Ratio"] = d["Total eve minutes"] / total_min
-    d["Night_Usage_Ratio"] = d["Total night minutes"] / total_min
-    d["Intl_Usage_Ratio"] = d["Total intl minutes"] / total_min
+    d["Day_Usage_Ratio"] = d.get("Total day minutes", 0) / total_min
+    d["Eve_Usage_Ratio"] = d.get("Total eve minutes", 0) / total_min
+    d["Night_Usage_Ratio"] = d.get("Total night minutes", 0) / total_min
+    d["Intl_Usage_Ratio"] = d.get("Total intl minutes", 0) / total_min
 
     return d
 
-# ====================== PREPROCESSING (Fixed) ======================
+# ====================== PREPROCESSING ======================
 CATEGORICAL_COLS = ["International plan", "Voice mail plan", "Area code"]
 NUMERICAL_COLS = [
     "Account length", "Number vmail messages", "Total day minutes", "Total day calls", "Total day charge",
@@ -95,31 +77,29 @@ NUMERICAL_COLS = [
 ]
 
 def preprocess(df_raw):
-    # Convert input to DataFrame safely
     if isinstance(df_raw, dict):
         df = pd.DataFrame([df_raw])
     else:
         df = df_raw.copy()
 
-    # Fix: Ensure Area code is always treated as string
     df["Area code"] = df["Area code"].astype(str)
 
-    # One-hot encoding
     df_ohe = pd.get_dummies(df, columns=CATEGORICAL_COLS, drop_first=True)
 
-    # Ensure expected OHE columns
+    # Ensure dummy columns
     for col in ["International plan_Yes", "Voice mail plan_Yes", "Area code_415", "Area code_510"]:
         if col not in df_ohe.columns:
             df_ohe[col] = 0
 
-    # Scale numerical columns
+    # Scaling
     scale_cols = [c for c in NUMERICAL_COLS if c in df_ohe.columns]
-    df_ohe[scale_cols] = scaler.transform(df_ohe[scale_cols])
+    if scale_cols:
+        df_ohe[scale_cols] = scaler.transform(df_ohe[scale_cols])
 
-    # Feature engineering
+    # Feature Engineering
     df_fe = create_powerful_features(df_ohe)
 
-    # Align to training columns
+    # Align columns
     final = pd.DataFrame(0, index=df_fe.index, columns=feature_columns)
     for col in df_fe.columns:
         if col in final.columns:
@@ -176,18 +156,13 @@ input_data = {
 
 # ====================== MAIN APP ======================
 st.title("📞 Telecom Customer Churn Predictor")
-st.caption("High-accuracy churn prediction using your Stacking Classifier")
-
-if IS_DEMO:
-    st.warning("⚠️ Demo mode active. Place your .joblib files for best accuracy.")
+st.caption("High-accuracy Stacking Classifier")
 
 if st.button("🚀 Predict Churn Risk", type="primary", use_container_width=True):
     with st.spinner("Analyzing customer..."):
         X = preprocess(input_data)
         prediction = model.predict(X)[0]
         proba = model.predict_proba(X)[0][1]
-
-        risk = "HIGH" if proba >= 0.70 else "MEDIUM" if proba >= 0.40 else "LOW"
 
         if prediction == 1:
             st.markdown(f'<div class="badge-churn">⚠️ HIGH RISK - Customer is likely to churn ({proba:.1%})</div>', unsafe_allow_html=True)
@@ -197,55 +172,49 @@ if st.button("🚀 Predict Churn Risk", type="primary", use_container_width=True
         col1, col2, col3 = st.columns(3)
         col1.metric("Churn Probability", f"{proba:.1%}")
         col2.metric("Retention Probability", f"{1-proba:.1%}")
-        col3.metric("Risk Level", risk)
+        col3.metric("Risk Level", "HIGH" if proba >= 0.7 else "MEDIUM" if proba >= 0.4 else "LOW")
 
-        # Gauge
+        # Gauge Chart
         fig = go.Figure(go.Indicator(
             mode="gauge+number",
             value=proba * 100,
             title={"text": "Churn Risk (%)"},
-            gauge={"axis": {"range": [0, 100]}, "bar": {"color": "#fc8181" if risk == "HIGH" else "#68d391"}}
+            gauge={"axis": {"range": [0, 100]}, 
+                   "bar": {"color": "#fc8181" if proba >= 0.7 else "#fbbf24" if proba >= 0.4 else "#68d391"}}
         ))
         st.plotly_chart(fig, use_container_width=True)
 
 # ====================== BATCH PREDICTION ======================
 st.markdown("---")
-st.subheader("📂 Batch Prediction")
+st.subheader("📂 Batch Prediction (File Upload)")
 
-mode = st.radio("Input Mode", ["Upload CSV", "Use Local Dataset"])
+uploaded = st.file_uploader("Upload customer data CSV", type=["csv"])
 
-if mode == "Upload CSV":
-    uploaded = st.file_uploader("Upload customer CSV", type=["csv"])
-    if uploaded:
-        batch_df = pd.read_csv(uploaded)
-else:
-    if st.button("Load Local Dataset"):
-        try:
-            path = r"D:\Telecom churn prediction app\backend\churn-bigml-80.csv"
-            batch_df = pd.read_csv(path)
-        except:
-            st.error("Local dataset not found.")
-
-if 'batch_df' in locals():
+if uploaded:
     try:
+        batch_df = pd.read_csv(uploaded)
         with st.spinner("Running batch predictions..."):
             X_batch = preprocess(batch_df)
             preds = model.predict(X_batch)
             probs = model.predict_proba(X_batch)[:, 1]
 
             batch_df["Churn_Prediction"] = preds
-            batch_df["Churn_Probability"] = (probs * 100).round(2)
+            batch_df["Churn_Probability (%)"] = (probs * 100).round(2)
             batch_df["Risk_Level"] = pd.cut(probs, bins=[0, 0.4, 0.7, 1], labels=["Low", "Medium", "High"])
 
         st.dataframe(batch_df, use_container_width=True)
 
-        fig = px.histogram(batch_df, x="Churn_Probability", nbins=30, title="Churn Probability Distribution")
+        fig = px.histogram(batch_df, x="Churn_Probability (%)", nbins=30, title="Churn Probability Distribution")
         st.plotly_chart(fig, use_container_width=True)
 
         csv = batch_df.to_csv(index=False).encode()
-        st.download_button("📥 Download Predictions", csv, "churn_predictions.csv", "text/csv")
-
+        st.download_button(
+            label="📥 Download Predictions",
+            data=csv,
+            file_name=f"churn_predictions_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+            mime="text/csv"
+        )
     except Exception as e:
-        st.error(f"Batch error: {str(e)}")
+        st.error(f"Error processing file: {str(e)}")
 
-st.caption("✅ Professional Churn Prediction App")
+st.caption("✅ Clean Professional Telecom Customer Churn Prediction App")
