@@ -30,7 +30,7 @@ churn-prediction-app
 
 🚀 Live Demo 
 
-https://telecom-customer-churn-prediction-pz.streamlit.app/
+https://telecom-customer-churn-prediction-appi.streamlit.app/
 
 📊 Output Example Prediction: 
 
