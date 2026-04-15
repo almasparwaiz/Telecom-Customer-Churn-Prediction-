@@ -248,4 +248,4 @@ if 'batch_df' in locals():
     except Exception as e:
         st.error(f"Batch error: {str(e)}")
 
-st.caption("✅ Fixed & Optimized for correct predictions • Built from your notebook")
+st.caption("✅ Professional Churn Prediction App")
