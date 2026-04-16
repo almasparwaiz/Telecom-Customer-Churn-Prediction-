@@ -8,7 +8,7 @@ The goal is to help businesses reduce customer loss by identifying at-risk users
 
 🧠 Machine Learning Approach Model Type: 
 
-Stacking Classifier (Ensemble Model) Preprocessing: StandardScaler + Feature Engineering Data Type: Telecom customer behavior dataset Output: Binary classification (Churn / No Churn)
+Stacking Classifier (Ensemble Model) Preprocessing: StandardScaler + Feature Engineering Data Type: Telecom customer behavior dataset 
 
 🛠️ Tech Stack Python 
 
