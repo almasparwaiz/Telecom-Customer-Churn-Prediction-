@@ -1,10 +1,10 @@
-### Customer Churn Prediction App 🚀 Overview
+### Customer Churn Prediction App 🚀
 
 This is an end-to-end Machine Learning web app built with Streamlit that predicts whether a telecom customer is likely to churn or stay. The model is trained on customer usage behavior and service-related features.
 
 The goal is to help businesses reduce customer loss by identifying at-risk users early.
 
-###🎯 Key Features 
+### 🎯 Key Features 
 🔮 Real-time churn prediction 
 📥 User-friendly input interface (Streamlit sidebar) 
 ⚡ Fast ML inference using trained stacking model 
