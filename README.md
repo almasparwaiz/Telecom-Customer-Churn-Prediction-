@@ -1,4 +1,4 @@
-### Customer Churn Prediction App 🚀
+## Customer Churn Prediction App (Data Science Project)
 
 This is an end-to-end Machine Learning web app built with Streamlit that predicts whether a telecom customer is likely to churn or stay. The model is trained on customer usage behavior and service-related features.
 
