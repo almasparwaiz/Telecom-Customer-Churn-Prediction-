@@ -44,7 +44,7 @@ def load_artifacts():
         feature_columns = joblib.load(features_path)
         return model, scaler, feature_columns
     except Exception as e:
-        st.error(f"❌ Model files not found in: {base_dir}\nError: {e}")
+        st.error("❌ Model files not found")
         st.stop()
 
 model, scaler, feature_columns = load_artifacts()
